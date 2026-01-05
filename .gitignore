@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project specific
+session.json
+config.json
+mb_token_cache.json
+mbox_token.json
+
+# Downloads
+Movies/
+Series/
