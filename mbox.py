@@ -21,22 +21,39 @@ def install_dependencies():
                 sys.exit(1)
     
     # 2. Aria2 (External Tool)
-    # User feedback: "not a must for aria2c to be in path... python is fine"
-    # Logic: Try to install if missing, but DO NOT force a restart or get stuck in a loop.
-    import shutil
-    if not shutil.which("aria2c"):
-        print("Aria2c not found. Attempting to install...")
-        is_android = os.path.exists("/storage/emulated/0/Download")
-        
-        if is_android:
+    # Improved Check:
+    # - Android: Check 'aria2c -v'
+    # - PC: Check 'pip show aria2' (since pip install doesn't always add bin to PATH)
+    is_android = os.path.exists("/storage/emulated/0/Download")
+    aria2_present = False
+
+    if is_android:
+        try:
+            # Check if running aria2c works
+            subprocess.check_call(["aria2c", "-v"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            aria2_present = True
+        except:
+            aria2_present = False
+            
+        if not aria2_present:
+            print("Aria2c not found. Installing via pkg...")
             try:
                 subprocess.check_call(["pkg", "install", "aria2", "-y"])
                 print("Aria2 installed via pkg.")
             except Exception as e:
                 print(f"Failed to install aria2 via pkg: {e}")
-        else:
+    else:
+        # PC / Python Environment
+        try:
+            # Check if pip package is installed
+            subprocess.check_call([sys.executable, "-m", "pip", "show", "aria2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            aria2_present = True
+        except:
+            aria2_present = False
+            
+        if not aria2_present:
+            print("Aria2 not found. Installing via pip...")
             try:
-                # Attempt pip install without verifying PATH afterwards
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "aria2"])
                 print("Aria2 installed via pip.")
             except Exception as e:
