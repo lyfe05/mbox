@@ -253,7 +253,7 @@ def main():
             elif menu_choice == "8":
                 from src.settings import settings_menu
                 settings_menu()
-                continue # Return to Main Menu, do NOT break (exits app) or fall through (exits app due to empty list)
+                break # Return to Main Menu
 
             else: return
 
