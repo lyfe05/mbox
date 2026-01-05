@@ -55,12 +55,11 @@ from .ui import console
 CONFIG_FILE = "config.json"
 
 ANDROID_PLAYERS = {
-    "Playify (Default)": "com.appnix.playify",
-    "VLC for Android": "org.videolan.vlc",
+    "Playify": "com.appnix.playify",
+    "Network Stream (Video) Player": "com.genuine.leone",
     "MX Player": "com.mxtech.videoplayer.ad",
-    "MX Player Pro": "com.mxtech.videoplayer.pro",
-    "Next Player": "dev.anilbeesetti.nextplayer",
-    "Just (Video) Player": "com.brouken.player"
+    "SH Player": "com.softel.shvideoplayerallformat",
+    "CricfyTV": "com.cricfy.tv"
 }
 
 def load_config():
