@@ -18,8 +18,9 @@ def settings_menu():
         curr_update = config.get("auto_update", True)
         
         console.print("\n")
-        table = Table(show_header=False, box=box.SIMPLE)
-        table.add_column("Option", style="cyan")
+        # Removing inner box lines for cleaner look inside Panel
+        table = Table(show_header=False, box=None, padding=(0, 1))
+        table.add_column("Option", style="cyan", justify="right")
         table.add_column("Setting", style="white")
         table.add_column("Current Value", style="yellow")
         
@@ -35,6 +36,9 @@ def settings_menu():
         
         console.print(Panel(table, title="[bold]⚙️  Settings[/]", border_style="blue"))
         
+        # Use ask_with_back logic if preferred, or just simple Prompt with specific choices
+        # The user specifically mentioned 0/b not working in SUB-MENUS.
+        # But for this main menu, 0 is listed as 'Back'.
         choice = Prompt.ask("Select Option", choices=["0", "1", "2", "3", "4"], default="0")
         
         if choice == "0":
@@ -46,7 +50,6 @@ def settings_menu():
                 save_config(data)
             else:
                 console.print("[dim]PC Player selection is currently handled by system PATH (VLC).[/]")
-                # Future: Allow setting custom path for mpv/potplayer here
                 Prompt.ask("Press Enter to continue")
                 
         elif choice == "2":
@@ -55,9 +58,15 @@ def settings_menu():
             for i, q in enumerate(q_choices):
                 console.print(f"  {i+1}. {q}")
             
-            q_idx = Prompt.ask("Choice", choices=[str(i+1) for i in range(len(q_choices))], default="5")
-            res = q_choices[int(q_idx)-1]
-            save_config({"default_quality": res})
+            # Using ask_with_back to allow 'b' or '0'
+            # Note: ask_with_back returns None on back
+            q_idx = ask_with_back("Choice", type='int', choices=[str(i+1) for i in range(len(q_choices))], default=len(q_choices))
+            
+            if q_idx is not None:
+                 res = q_choices[q_idx-1]
+                 save_config({"default_quality": res})
+                 console.print(f"[green]Default quality set to: {res}[/]")
+                 # time.sleep(0.5)
             
         elif choice == "3":
             new_path = Prompt.ask("Enter new download path (leave empty to reset to default)")
