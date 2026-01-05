@@ -250,6 +250,11 @@ def main():
                 # API uses 1-based paging
                 content_list, has_more = get_trending_now_content(session, token, current_page + 1)
 
+            elif menu_choice == "8":
+                from src.settings import settings_menu
+                settings_menu()
+                continue # Return to Main Menu, do NOT break (exits app) or fall through (exits app due to empty list)
+
             else: return
 
             # --- EMPTY CHECK ---
