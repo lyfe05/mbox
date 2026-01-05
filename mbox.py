@@ -1,6 +1,59 @@
-import requests
 import sys
 import os
+import subprocess
+import time
+
+# --- Auto-Install Dependencies ---
+def install_dependencies():
+    # 1. Python Libraries
+    required = ["requests", "rich"]
+    installed = False
+    for package in required:
+        try:
+            __import__(package)
+        except ImportError:
+            print(f"Package '{package}' not found. Installing...")
+            try:
+                subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                installed = True
+            except subprocess.CalledProcessError:
+                print(f"Failed to install {package}. Please install manually.")
+                sys.exit(1)
+    
+    # 2. Aria2 (External Tool)
+    # Check if aria2c is in PATH
+    import shutil
+    if not shutil.which("aria2c"):
+        print("Aria2c not found. Attempting to install...")
+        is_android = os.path.exists("/storage/emulated/0/Download")
+        
+        if is_android:
+            # Android / Termux
+            try:
+                subprocess.check_call(["pkg", "install", "aria2", "-y"])
+                print("Aria2 installed via pkg.")
+                installed = True
+            except Exception as e:
+                print(f"Failed to install aria2 via pkg: {e}")
+        else:
+            # PC
+            try:
+                # User requested pip install for PC (Note: This might not give the binary on all systems)
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "aria2"])
+                print("Aria2 installed via pip.")
+                installed = True
+            except Exception as e:
+                 print(f"Failed to install aria2 via pip: {e}")
+                 print("Please install 'aria2' manually (e.g. winget install aria2 / brew install aria2).")
+
+    if installed:
+        print("Dependencies installed/updated. Restarting script...")
+        time.sleep(1)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+install_dependencies()
+
+import requests
 from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt
