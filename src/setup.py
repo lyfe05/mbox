@@ -129,7 +129,7 @@ def setup_android_player():
         
     console.print(table)
     
-    console.print(table)
+
     
     # Use ask_with_back to allow returning None
     choice_idx = ask_with_back("Select Default Player", type='int', choices=[str(i+1) for i in range(len(players_list))], default=1)
