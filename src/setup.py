@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.prompt import Prompt
 from rich.table import Table
 from rich import box
-from .ui import console, print_banner
+from .ui import console, print_banner, ask_with_back
 from .config import CONFIG_FILE, ANDROID_PLAYERS, save_config
 
 # --- Windows / VLC Logic (Adapted from file.py) ---
@@ -129,8 +129,15 @@ def setup_android_player():
         
     console.print(table)
     
-    choice = Prompt.ask("Select Default Player", choices=[str(i+1) for i in range(len(players_list))], default="1")
-    selected_name, selected_pkg = players_list[int(choice)-1]
+    console.print(table)
+    
+    # Use ask_with_back to allow returning None
+    choice_idx = ask_with_back("Select Default Player", type='int', choices=[str(i+1) for i in range(len(players_list))], default=1)
+    
+    if choice_idx is None:
+        return None
+
+    selected_name, selected_pkg = players_list[choice_idx-1]
 
     if selected_pkg == "__CUSTOM__":
         selected_pkg = Prompt.ask("Enter Package Name (e.g. com.example.player)")

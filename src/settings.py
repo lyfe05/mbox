@@ -47,7 +47,7 @@ def settings_menu():
         elif choice == "1":
             if IS_ANDROID:
                 data = setup_android_player()
-                save_config(data)
+                if data: save_config(data)
             else:
                 console.print("[dim]PC Player selection is currently handled by system PATH (VLC).[/]")
                 Prompt.ask("Press Enter to continue")
