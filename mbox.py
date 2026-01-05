@@ -21,14 +21,12 @@ def install_dependencies():
                 sys.exit(1)
     
     # 2. Aria2 (External Tool)
-    # Check if aria2c is in PATH
     import shutil
     if not shutil.which("aria2c"):
         print("Aria2c not found. Attempting to install...")
         is_android = os.path.exists("/storage/emulated/0/Download")
         
         if is_android:
-            # Android / Termux
             try:
                 subprocess.check_call(["pkg", "install", "aria2", "-y"])
                 print("Aria2 installed via pkg.")
@@ -36,22 +34,52 @@ def install_dependencies():
             except Exception as e:
                 print(f"Failed to install aria2 via pkg: {e}")
         else:
-            # PC
             try:
-                # User requested pip install for PC (Note: This might not give the binary on all systems)
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "aria2"])
                 print("Aria2 installed via pip.")
                 installed = True
             except Exception as e:
                  print(f"Failed to install aria2 via pip: {e}")
-                 print("Please install 'aria2' manually (e.g. winget install aria2 / brew install aria2).")
+                 print("Please install 'aria2' manually.")
 
-    if installed:
-        print("Dependencies installed/updated. Restarting script...")
-        time.sleep(1)
-        os.execv(sys.executable, [sys.executable] + sys.argv)
+    return installed
 
-install_dependencies()
+def check_for_updates():
+    """Checks for git updates and pulls them."""
+    import json
+    try:
+        if os.path.exists("config.json"):
+            with open("config.json", 'r') as f:
+                 data = json.load(f)
+                 if not data.get("auto_update", True):
+                     return False
+    except: pass
+
+    import shutil
+    if not shutil.which("git"): return False
+
+    print("Checking for updates...")
+    try:
+        subprocess.check_call(["git", "fetch", "origin"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+             output = subprocess.check_output(["git", "status", "-uno"], text=True)
+             if "behind" in output:
+                 print("Update available. Pulling...")
+                 subprocess.check_call(["git", "pull"]) 
+                 print("Updated! Restarting...")
+                 return True
+        except: pass
+    except Exception as e:
+        print(f"Update check failed: {e}")
+    return False
+
+# Run Checks
+updated = check_for_updates()
+installed = install_dependencies()
+
+if updated or installed:
+    time.sleep(1)
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 import requests
 from rich.table import Table
@@ -95,9 +123,10 @@ def main():
         menu_table.add_row("5", "📺 Tv Show")
         menu_table.add_row("6", "🎨 Animation")
         menu_table.add_row("7", "🚀 Trending Now")
+        menu_table.add_row("8", "⚙️  Settings")
         console.print(Panel(menu_table, title="[bold]Main Menu[/]", border_style="green"))
 
-        menu_choice = Prompt.ask("Select Option", choices=["1", "2", "3", "4", "5", "6", "7"], default="1")
+        menu_choice = Prompt.ask("Select Option", choices=["1", "2", "3", "4", "5", "6", "7", "8"], default="1")
         current_page = 0 # Start at page 0 (internal logic)
         content_list = []
         home_sections = [] # Cache for home sections
@@ -372,26 +401,58 @@ def main():
                 # Use first valid episode to show Quality Options
                 first_ep = valid_eps_ordered[0]
                 base_streams = streams_map[first_ep]
-                
-                q_title = "Available Qualities" if is_movie else f"Available Qualities (Based on Ep {first_ep})"
-                q_table = Table(title=q_title, box=box.ROUNDED)
-                q_table.add_column("#", justify="right", style="cyan")
-                q_table.add_column("Resolution", style="green")
-                q_table.add_column("Size (Approx)", style="yellow")
-                for idx, stream in enumerate(base_streams):
-                    size_mb = f"{int(stream.get('size', 0)) / (1024 * 1024):.2f} MB"
-                    q_table.add_row(str(idx + 1), f"{stream.get('resolutions')}p", size_mb)
-                console.print(q_table)
+
+                # --- Quality Selection Logic ---
+                import json
+                default_q = "Ask"
+                try:
+                    if os.path.exists("config.json"):
+                        with open("config.json", 'r') as f:
+                            data = json.load(f)
+                            default_q = data.get("default_quality", "Ask")
+                except: pass
 
                 target_res = None
-                q_idx_val = ask_with_back("Select Quality", type='int', default=1)
-                if q_idx_val is None: break 
                 
-                try:
-                    q_idx = q_idx_val - 1
-                    if q_idx < 0 or q_idx >= len(base_streams): raise ValueError
-                    target_res = base_streams[q_idx].get('resolutions')
-                except: continue
+                if default_q != "Ask":
+                    # Try to find default_q (e.g., "1080p")
+                    target_res_int = int(default_q.replace("p", ""))
+                    
+                    # Sort streams by resolution descending
+                    base_streams_sorted = sorted(base_streams, key=lambda x: int(x.get('resolutions', 0)), reverse=True)
+                    
+                    # 1. Exact Match
+                    match = next((s for s in base_streams_sorted if int(s.get('resolutions')) == target_res_int), None)
+                    
+                    # 2. Fallback (first one that is smaller or equal, or just the best one available)
+                    if not match:
+                        console.print(f"[bold yellow]⚠️  Preferred quality {default_q} not found. Falling back to best available.[/]")
+                        match = base_streams_sorted[0] # Pick the highest available
+                        
+                    target_res = match.get('resolutions')
+                    console.print(f"[green]✅ Auto-selected Quality: {target_res}p[/]")
+                
+                else:
+                    # Manual Selection
+                    q_title = "Available Qualities" if is_movie else f"Available Qualities (Based on Ep {first_ep})"
+                    q_table = Table(title=q_title, box=box.ROUNDED)
+                    q_table.add_column("#", justify="right", style="cyan")
+                    q_table.add_column("Resolution", style="green")
+                    q_table.add_column("Size (Approx)", style="yellow")
+                    for idx, stream in enumerate(base_streams):
+                        size_mb = f"{int(stream.get('size', 0)) / (1024 * 1024):.2f} MB"
+                        q_table.add_row(str(idx + 1), f"{stream.get('resolutions')}p", size_mb)
+                    console.print(q_table)
+
+                    target_res_val = None
+                    q_idx_val = ask_with_back("Select Quality", type='int', default=1)
+                    if q_idx_val is None: break 
+                    
+                    try:
+                        q_idx = q_idx_val - 1
+                        if q_idx < 0 or q_idx >= len(base_streams): raise ValueError
+                        target_res = base_streams[q_idx].get('resolutions')
+                    except: continue
 
                 # --- Verify Quality Availability ---
                 episode_quality_map = {}

@@ -8,12 +8,22 @@ CONFIG_FILE = "config.json"
 
 # Base Download Path (Multiplatform)
 IS_ANDROID = os.path.exists("/storage/emulated/0/Download")
-if IS_ANDROID:
-    # Android / Termux
-    BASE_DOWNLOAD_DIR = "/storage/emulated/0/Download/mbox cli"
-else:
-    # Windows / Linux / Mac
-    BASE_DOWNLOAD_DIR = os.path.join(os.path.expanduser("~"), "Downloads", "mbox cli")
+
+def get_base_dir():
+    # Helper to resolve path (Config > Android Default > PC Default)
+    # This involves circular dependency if we import load_config here directly at top level 
+    # if load_config uses constants. But load_config is below.
+    # We will handle the variable assignment AFTER load_config is defined, or just use a getter.
+    # For simplicity, let's keep the default here, but let mbox.py/downloader.py override it 
+    # by reading the config themselves. 
+    # OR, we move load_config to top or a separate utils?
+    # Let's keep it simple: Define DEFAULT, then have a getter that checks config.
+    if IS_ANDROID:
+        return "/storage/emulated/0/Download/mbox cli"
+    else:
+        return os.path.join(os.path.expanduser("~"), "Downloads", "mbox cli")
+
+BASE_DOWNLOAD_DIR = get_base_dir()
 
 # Headers
 BASE_HEADERS = {
