@@ -18,7 +18,7 @@ from src.api import (
 from src.utils import clean_filename, parse_episode_input
 from src.player import play_video
 from src.downloader import run_aria2_download
-from src.config import BASE_DOWNLOAD_DIR, CONTENT_HOST, CONTENT_HEADERS, CONFIG_FILE
+from src.config import BASE_DOWNLOAD_DIR, CONTENT_HOST, CONTENT_HEADERS, CONFIG_FILE, IS_ANDROID
 from src.setup import run_setup
 
 # --- Main Application ---
@@ -394,7 +394,7 @@ def main():
                      
                      selected_lan_name = None # For matching others
                      
-                     if first_captions:
+                     if first_captions and not IS_ANDROID:
                          console.print(f"\n[bold cyan]Select Subtitle ({'Movie' if is_movie else 'Series Batch'}):[/]")
                          
                          eng_idx = 1

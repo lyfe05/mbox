@@ -7,7 +7,8 @@ CACHE_FILE = "session.json"
 CONFIG_FILE = "config.json"
 
 # Base Download Path (Multiplatform)
-if os.path.exists("/storage/emulated/0/Download"):
+IS_ANDROID = os.path.exists("/storage/emulated/0/Download")
+if IS_ANDROID:
     # Android / Termux
     BASE_DOWNLOAD_DIR = "/storage/emulated/0/Download/mbox cli"
 else:
