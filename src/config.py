@@ -58,8 +58,7 @@ ANDROID_PLAYERS = {
     "Playify": "com.appnix.playify",
     "Network Stream (Video) Player": "com.genuine.leone",
     "MX Player": "com.mxtech.videoplayer.ad",
-    "SH Player": "com.softel.shvideoplayerallformat",
-    "CricfyTV": "com.cricfy.tv"
+    "Custom Input": "__CUSTOM__"
 }
 
 def load_config():

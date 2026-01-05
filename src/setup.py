@@ -131,6 +131,10 @@ def setup_android_player():
     
     choice = Prompt.ask("Select Default Player", choices=[str(i+1) for i in range(len(players_list))], default="1")
     selected_name, selected_pkg = players_list[int(choice)-1]
+
+    if selected_pkg == "__CUSTOM__":
+        selected_pkg = Prompt.ask("Enter Package Name (e.g. com.example.player)")
+        selected_name = f"Custom ({selected_pkg})"
     
     return {"player_name": selected_name, "player_package": selected_pkg}
 
