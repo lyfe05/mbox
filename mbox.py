@@ -23,21 +23,36 @@ def install_dependencies():
     # 2. Aria2 (External Tool)
     import shutil
     if not shutil.which("aria2c"):
-        print("Aria2c not found. Attempting to install...")
+        # Check config to see if we should suppress the check or if we are in a loop?
+        # Better: Try install, then check AGAIN. If still missing, warn and continue (don't restart).
+        
+        print("Aria2c binary not found. Attempting to install...")
         is_android = os.path.exists("/storage/emulated/0/Download")
         
         if is_android:
             try:
                 subprocess.check_call(["pkg", "install", "aria2", "-y"])
                 print("Aria2 installed via pkg.")
-                installed = True
+                if shutil.which("aria2c"): installed = True
             except Exception as e:
                 print(f"Failed to install aria2 via pkg: {e}")
         else:
             try:
+                # Attempt pip install (User request), but it often doesn't provide the binary in PATH
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "aria2"])
-                print("Aria2 installed via pip.")
-                installed = True
+                print("Python 'aria2' package installed/updated.")
+                
+                # Check again
+                if shutil.which("aria2c"):
+                    print("Aria2c binary found!")
+                    installed = True
+                else:
+                    print("[yellow]Warning: 'aria2c' binary still not found in PATH.[/]")
+                    print("The 'aria2' pip package might simply be a wrapper.")
+                    print("Please download the actual executable from: https://github.com/aria2/aria2/releases")
+                    print("Or use: 'winget install aria2' / 'choco install aria2'")
+                    # Do NOT set installed = True here to avoid infinite loop
+                    
             except Exception as e:
                  print(f"Failed to install aria2 via pip: {e}")
                  print("Please install 'aria2' manually.")
